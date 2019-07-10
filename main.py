@@ -2,7 +2,9 @@
 from __future__ import print_function, unicode_literals
 
 import regex
+import csv
 from pprint import pprint
+from operator import itemgetter
 
 from PyInquirer import style_from_dict, Token, prompt
 
@@ -50,7 +52,7 @@ questions = [
         'type': 'list',
         'name': 'sangrado',
         'message': 'Presenta sangrado?',
-        'choices': ['No', 'Leve', 'Moderado', 'Severo'],
+        'choices': ['No', 'Si'],
         'filter': lambda val: val.lower()
     },
     {
@@ -141,7 +143,7 @@ questions = [
         'type': 'list',
         'name': 'dolor',
         'message': 'Presenta dolor?',
-        'choices': ['No', 'Abdominal', 'En extremidades'],
+        'choices': ['No', 'Abdominal', 'En las extremidades'],
         'filter': lambda val: val.lower()
     },
     {
@@ -161,5 +163,31 @@ questions = [
 ]
 
 answers = prompt(questions, style=custom_style_3)
-print('Los síntomas son:')
-pprint(answers)
+#print('Los síntomas son:')
+#pprint(answers)
+
+results = {}
+with open("symptom_data.csv", "r") as f:
+    reader = csv.reader(f, delimiter=",")
+    header = []
+    for i, line in enumerate(reader):
+        if (i == 0):
+            # Save header
+            header = line
+        else:
+            # Compute
+            disease = line[0]
+            line = line[1:]
+            achievedScore = 0
+            bestScore = len(line)
+
+            #print('Computing for disease: ' + disease)
+            for index, column in enumerate(header[1:]):
+                #print('Parsing {}: {} == {}'.format(column, line[index], answers[column]))
+                if answers[column] == line[index]:
+                    achievedScore += 1
+            results[disease] = round(100*float(achievedScore)/bestScore, 2)
+
+results = sorted(results.items(), key=itemgetter(1), reverse=True)
+for i in results:
+    print('Chances de que tenga {}: {}%'.format(i[0], i[1]))
